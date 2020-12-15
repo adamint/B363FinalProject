@@ -1,0 +1,128 @@
+    body {
+        padding-bottom:1.5em;
+    }
+
+    div.fixedbox {
+        position:absolute;
+        bottom: 0;
+        left: 0;
+        overflow: hidden;
+        width:100%;
+        font-family: Arial, Verdana, sans-serif;
+        font-size: 12px;
+        padding: 3px;
+        background-color: #ffffe1;	    
+        border-top: 1px solid #808080;
+        line-height: 1.5em;    
+        height: 2em;
+        /* for ie7+6 */
+        *height: 2.1em;
+        z-index: 1001; /* Fix for FF2 not showing over all divs */ 
+    }
+    
+    div.fixedboxError
+    {
+        background-color: #FDD;
+        border-top: 1px solid #F00;
+    }
+
+    div.fixedboxComplete
+    {
+        background-color: #CFC;
+        border-top: 1px solid #6C6;
+    }
+
+    
+    div.fixedbox img 
+    {
+        position: relative;
+	    top: .15em; 
+        margin-left: 5px;
+	    margin-right: 5px;
+    }
+	    
+    div.fixedbox div.loadingbar_btn_holder,
+    div.fixedbox div.loadingbar_error
+    {
+        float: right;
+	    margin-right: 2px;
+    }
+    
+    span.loadingbar_paused_text
+    {
+        margin-left: 1em;
+    }
+
+    body > div.fixedbox 
+    {
+        position:fixed;
+    }
+
+    body 
+    {
+        height: 100%;
+    }
+
+    div.fixedbox div.loadingbar_error
+    {
+        display : none;
+    }
+    
+    .contentLoader_cancelled_request
+    {
+        
+    }
+ 
+ .loadingbar_btn_holder button,
+ .loadingbar_error button {
+    display:block;
+    float:left;
+    margin:0 7px 0 0;
+    background-color:#f5f5f5;
+    border:1px solid #888;
+
+    font-family:"Lucida Grande", Tahoma, Arial, Verdana, sans-serif;
+    font-size:100%;
+    line-height:130%;
+    text-decoration:none;
+    font-weight:bold;
+    color:#565656;
+    cursor:pointer;
+    padding: 1px 10px 4px 7px; /* Links */
+    *padding: 1px 0px 4px 0px;
+    -moz-border-radius: 6px;  
+    -webkit-border-radius: 6px;  
+    border-radius: 6px;  
+ }
+
+ .loadingbar_btn_holder button img {
+    margin:0 3px -2px 0 !important;
+    padding:0;
+    border:none;
+    width:16px;
+    height:16px;
+}
+
+.loadingbar_btn_holder button:hover,
+.loadingbar_error button:hover{
+    background-color: #eff4ff;
+    border: 1px solid #a2c1ef;
+    color: #336699;
+}
+
+.loadingbar_error button
+{
+    float: right;
+}
+
+.loadingbar_error span
+{
+    margin-right: 5px;
+}
+
+* html div.fixedbox 
+{
+    _position: absolute;
+    _top:expression(((document.compatMode && document.compatMode=='CSS1Compat') ? documentElement.scrollTop +(documentElement.clientHeight-this.clientHeight) : document.body.scrollTop +(document.body.clientHeight-this.clientHeight)));
+    _width: expression( ( document.body.clientWidth + 16) + "px");
+}

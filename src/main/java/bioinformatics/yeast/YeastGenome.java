@@ -1,6 +1,7 @@
 package bioinformatics.yeast;
 
 import bioinformatics.LloydClustering;
+import bioinformatics.Motifs;
 import bioinformatics.Utils;
 import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
@@ -8,13 +9,12 @@ import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.Styler;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static bioinformatics.yeast.GeneSequenceParser.*;
 
 public class YeastGenome {
     private List<YeastGene> genes;
@@ -49,7 +49,7 @@ public class YeastGenome {
 
     public static void main(String[] args) {
         YeastGenome yeastGenome = new YeastGenome();
-        yeastGenome.filterGenes(2.2);
+        //yeastGenome.filterGenes(2.2);
         List<List<Double>> data = yeastGenome.getGenes().stream().map(YeastGene::getExpressionsLog).collect(Collectors.toList());
 
         XYChart kChart = new XYChartBuilder().width(600).height(400).title("k SSEs").xAxisTitle("k").yAxisTitle("SSE").build();
@@ -117,7 +117,7 @@ public class YeastGenome {
         for (Map.Entry<List<Double>, List<List<Double>>> cluster : clusters.entrySet()) {
             List<Double> clusterCenter = cluster.getKey();
             if (clusterCenter.get(clusterCenter.size() - 1) > 0) { // trends upwards
-                System.out.println("Genes in cluster " + index + " " + clusterCenter + " show increasing expression levels after diauxic shift. These genes are below: ");
+                System.out.println(cluster.getValue().size() + " genes in cluster " + index + " " + clusterCenter + " show increasing expression levels after diauxic shift. These genes are below: ");
                 for (List<Double> clusteredPoint : cluster.getValue()) {
                     numIncreasing++;
                     YeastGene gene = yeastGenome.getGenes().stream().filter(g -> g.getExpressionsLog().equals(clusteredPoint)).findFirst().get();
@@ -130,6 +130,72 @@ public class YeastGenome {
             index++;
         }
         System.out.println("\n\nNumber of genes increasing: " + numIncreasing);
+
+
+        List<Utils.Pair<String, String>> csreGenesList = Arrays.stream(Utils.readResource("CSREfound.txt").split("\n\n"))
+                .map(csre -> {
+                    String[] split = csre.split("\n");
+                    String name = split[0].replace("CSRE is found in gene ", "");
+                    String sequence = split[1].replace("Sequence:", "");
+                    return new Utils.Pair<>(name, sequence);
+                }).collect(Collectors.toList());
+        Map<String, String> csreGeneToSequenceMap = new HashMap<>();
+        for (Utils.Pair<String, String> pair : csreGenesList) {
+            csreGeneToSequenceMap.put(pair.getK(), pair.getV());
+        }
+
+        System.out.println("=======");
+        int csre = 0;
+        int clusterNumber = 0;
+        for (Map.Entry<List<Double>, List<List<Double>>> cluster : clusters.entrySet()) {
+            List<Double> clusterCenter = cluster.getKey();
+            List<String> clusterSequences = new ArrayList<>();
+            if (clusterCenter.get(clusterCenter.size() - 1) > 0) { // trends upwards
+                for (List<Double> clusteredPoint : cluster.getValue()) {
+                    YeastGene gene = yeastGenome.getGenes().stream().filter(g -> g.getExpressionsLog().equals(clusteredPoint)).findFirst().get();
+
+                    if (csreGeneToSequenceMap.containsKey(gene.getGene())) {
+                        clusterSequences.add(csreGeneToSequenceMap.get(gene.getGene()));
+                        csre++;
+                        List<String> kmers = Motifs.generateKmers(csreGeneToSequenceMap.get(gene.getGene()), csrePattern.length());
+                        String type = null;
+                        String foundKmer = null;
+                        int hamming = 0;
+                        for (String kmer : kmers) {
+                            if (Motifs.calculateHammingDistance(kmer, csrePattern) <= 1) {
+                                type = "normal";
+                                foundKmer = kmer;
+                                hamming = Motifs.calculateHammingDistance(kmer, csrePattern);
+                                break;
+                            } else if (Motifs.calculateHammingDistance(kmer, reversed(csrePattern)) <= 1) {
+                                type = "reversed";
+                                foundKmer = kmer;
+                                hamming = Motifs.calculateHammingDistance(kmer, reversed(csrePattern));
+                                break;
+                            } else if (Motifs.calculateHammingDistance(kmer, oppositeDnaSequence(csrePattern)) <= 1) {
+                                type = "complement";
+                                foundKmer = kmer;
+                                hamming = Motifs.calculateHammingDistance(kmer, oppositeDnaSequence(csrePattern));
+                                break;
+                            }
+                        }
+
+                        System.out.println("Gene " + gene.getGene() + ":\nExpressions: " + gene.getExpressionsLog() + "\nCluster:" + clusterNumber
+                                + "\nCSRE kmer: " + foundKmer + " (hamming distance of " + hamming + ")\nCSRE type: " + type);
+                        System.out.println();
+                    }
+                }
+
+            }
+
+            clusterNumber++;
+        }
+
+        System.out.println("\n\nThere are a total of " + csre + " genes that show increasing expression levels after diauxic shift " +
+                "and contain the CSRE motif.");
+
+        List<String> sequences = new ArrayList<>(csreGeneToSequenceMap.values());
+        System.out.println(Motifs.gibbsSampler(sequences, 10, sequences.size(), 1000));
 
     }
 
